@@ -13,7 +13,7 @@ export default function NavBar() {
 
   return (
     <header
-      className="border-b sticky top-0 z-10 backdrop-blur"
+      className="border-b sticky top-0 z-10 backdrop-blur print:hidden"
       style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface-1) 92%, transparent)" }}
     >
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">

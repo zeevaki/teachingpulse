@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { useEntries, useNow } from "@/lib/hooks";
 import { formatDuration, startOfWeek } from "@/lib/format";
@@ -8,6 +8,7 @@ import { formatDuration, startOfWeek } from "@/lib/format";
 export default function WeeklyChart() {
   const entries = useEntries();
   const now = useNow();
+  const tableDetailsRef = useRef<HTMLDetailsElement>(null);
 
   const weekStart = useMemo(() => startOfWeek(new Date(now)).getTime(), [now]);
 
@@ -23,21 +24,61 @@ export default function WeeklyChart() {
     return map;
   }, [entries, weekStart, now]);
 
+  // Force the collapsible table open for the printout, then restore whatever
+  // state it was in on screen — native <details> content is only present in
+  // the printed page while it's actually open.
+  useEffect(() => {
+    const el = tableDetailsRef.current;
+    if (!el) return;
+    let wasOpen = el.open;
+    const onBeforePrint = () => {
+      wasOpen = el.open;
+      el.open = true;
+    };
+    const onAfterPrint = () => {
+      el.open = wasOpen;
+    };
+    window.addEventListener("beforeprint", onBeforePrint);
+    window.addEventListener("afterprint", onAfterPrint);
+    return () => {
+      window.removeEventListener("beforeprint", onBeforePrint);
+      window.removeEventListener("afterprint", onAfterPrint);
+    };
+  }, []);
+
   if (now === 0) return null;
 
   const maxMs = Math.max(1, ...Array.from(totals.values()));
   const grandTotalMs = Array.from(totals.values()).reduce((a, b) => a + b, 0);
   const hasAnyData = grandTotalMs > 0;
+  const weekLabel = new Date(weekStart).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-          This week
-        </h1>
-        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-          Week of {new Date(weekStart).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-        </p>
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6 print:py-0">
+      {/* Print-only header — the on-screen NavBar is hidden when printing */}
+      <div className="hidden print:block mb-4">
+        <h1 className="text-xl font-semibold">🩺 TeachingPulse — Weekly Summary</h1>
+        <p className="text-sm text-gray-600">Week of {weekLabel}</p>
+      </div>
+
+      <div className="flex items-center justify-between print:hidden">
+        <div>
+          <h1 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+            This week
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Week of {weekLabel}
+          </p>
+        </div>
+        {hasAnyData && (
+          <button
+            onClick={() => window.print()}
+            className="text-sm font-medium px-3 py-1.5 rounded-full border"
+            style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
+          >
+            🖨️ Print summary
+          </button>
+        )}
       </div>
 
       {/* Hero figure: total tracked time */}
@@ -99,10 +140,11 @@ export default function WeeklyChart() {
         </div>
       )}
 
-      {/* Table view fallback (also satisfies the "table view always exists" rule) */}
+      {/* Table view fallback (also satisfies the "table view always exists" rule,
+          and is what actually prints — forced open around window.print() above) */}
       {hasAnyData && (
-        <details className="text-sm">
-          <summary className="cursor-pointer" style={{ color: "var(--text-secondary)" }}>
+        <details ref={tableDetailsRef} className="text-sm">
+          <summary className="cursor-pointer print:hidden" style={{ color: "var(--text-secondary)" }}>
             View as table
           </summary>
           <table className="w-full mt-2 border-collapse">

@@ -81,3 +81,15 @@ body {
   color: var(--text-primary);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+@media print {
+  /* Force the categorical bar colors to actually print instead of being
+     stripped by the browser's default "no background graphics" setting. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: #ffffff;
+  }
+}
