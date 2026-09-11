@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { useEntries, useNow } from "@/lib/hooks";
+import { clearAllEntries } from "@/lib/storage";
 import { formatDuration, startOfWeek } from "@/lib/format";
 
 export default function WeeklyChart() {
@@ -45,6 +46,13 @@ export default function WeeklyChart() {
       window.removeEventListener("afterprint", onAfterPrint);
     };
   }, []);
+
+  function handleClearAll() {
+    const confirmed = window.confirm(
+      `This permanently deletes all ${entries.length} logged ${entries.length === 1 ? "entry" : "entries"} — not just this week. This cannot be undone. Clear everything and start fresh?`
+    );
+    if (confirmed) clearAllEntries();
+  }
 
   if (now === 0) return null;
 
@@ -168,6 +176,19 @@ export default function WeeklyChart() {
             </tbody>
           </table>
         </details>
+      )}
+
+      {/* Destructive, so it's tucked at the bottom and requires confirmation */}
+      {entries.length > 0 && (
+        <div className="text-center pt-2 print:hidden">
+          <button
+            onClick={handleClearAll}
+            className="text-xs font-medium"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Clear all tracking data
+          </button>
+        </div>
       )}
     </div>
   );
