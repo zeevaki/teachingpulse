@@ -90,6 +90,24 @@ export function getActiveEntry(entries: LogEntry[]): LogEntry | undefined {
   return entries.find((e) => e.endTime === null);
 }
 
+export const MAX_ACTIVE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
+
+/**
+ * If the active entry has run past MAX_ACTIVE_DURATION_MS, auto-stops it at the
+ * cap and flags it, so a forgotten-running timer doesn't silently rack up hours.
+ */
+export function checkAutoCap(now: number): LogEntry[] {
+  const entries = getSnapshot();
+  const active = getActiveEntry(entries);
+  if (!active || now - active.startTime < MAX_ACTIVE_DURATION_MS) return entries;
+  const cappedEndTime = active.startTime + MAX_ACTIVE_DURATION_MS;
+  const next = entries.map((e) =>
+    e.id === active.id ? { ...e, endTime: cappedEndTime, autoStopped: true } : e
+  );
+  commit(next);
+  return next;
+}
+
 export function deleteEntry(id: string): LogEntry[] {
   const next = getSnapshot().filter((e) => e.id !== id);
   commit(next);

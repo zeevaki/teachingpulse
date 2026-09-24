@@ -11,4 +11,6 @@ export type LogEntry = {
   categoryId: string;
   startTime: number; // epoch ms
   endTime: number | null; // null while the activity is running
+  /** True if this entry was auto-stopped for exceeding the max duration, not manually stopped. */
+  autoStopped?: boolean;
 };

@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect } from "react";
 import { CATEGORIES, getCategory } from "@/lib/categories";
-import { startEntry, stopActiveEntry, getActiveEntry, deleteEntry } from "@/lib/storage";
+import { startEntry, stopActiveEntry, getActiveEntry, deleteEntry, checkAutoCap } from "@/lib/storage";
 import { useEntries, useNow } from "@/lib/hooks";
 import { formatDuration, formatClockTime, startOfDay } from "@/lib/format";
 
 export default function Tracker() {
   const entries = useEntries();
   const now = useNow();
+
+  // Runs each tick; auto-stops (and flags) an active entry once it passes the cap.
+  useEffect(() => {
+    if (now > 0) checkAutoCap(now);
+  }, [now]);
 
   const active = getActiveEntry(entries);
 
@@ -120,6 +126,15 @@ export default function Tracker() {
                       {formatClockTime(e.startTime)}
                       {e.endTime ? ` – ${formatClockTime(e.endTime)}` : " – now"}
                     </span>
+                    {e.autoStopped && (
+                      <span
+                        title="Auto-stopped after 3 hours — looks like this ran while forgotten. Check the times."
+                        className="text-xs font-medium px-1.5 py-0.5 rounded-full"
+                        style={{ color: "var(--series-8)", background: "color-mix(in srgb, var(--series-8) 14%, var(--surface-1))" }}
+                      >
+                        ⚠️ auto-stopped
+                      </span>
+                    )}
                   </span>
                   <span className="flex items-center gap-3">
                     <span
