@@ -114,6 +114,22 @@ export function deleteEntry(id: string): LogEntry[] {
   return next;
 }
 
+/**
+ * Merges restored entries into the current log. Entries already present (same id)
+ * are skipped so restoring the same backup twice doesn't duplicate anything, and
+ * still-running entries from the backup are skipped so there's never more than
+ * one active timer. Returns how many entries were added.
+ */
+export function importEntries(incoming: LogEntry[]): number {
+  const current = getSnapshot();
+  const existingIds = new Set(current.map((e) => e.id));
+  const toAdd = incoming.filter((e) => e.endTime !== null && !existingIds.has(e.id));
+  if (toAdd.length === 0) return 0;
+  const next = [...current, ...toAdd].sort((a, b) => a.startTime - b.startTime);
+  commit(next);
+  return toAdd.length;
+}
+
 export function clearAllEntries(): LogEntry[] {
   commit([]);
   return [];

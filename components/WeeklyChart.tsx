@@ -5,6 +5,7 @@ import { CATEGORIES } from "@/lib/categories";
 import { useEntries, useNow } from "@/lib/hooks";
 import { clearAllEntries } from "@/lib/storage";
 import { formatDuration, startOfWeek } from "@/lib/format";
+import DataBackup from "@/components/DataBackup";
 
 export default function WeeklyChart() {
   const entries = useEntries();
@@ -177,6 +178,8 @@ export default function WeeklyChart() {
           </table>
         </details>
       )}
+
+      <DataBackup />
 
       {/* Destructive, so it's tucked at the bottom and requires confirmation */}
       {entries.length > 0 && (
